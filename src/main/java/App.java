@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class App extends HttpServlet {
     public String getGreeting() {
-        return "Hello ";
+        return "Hello  ";
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
