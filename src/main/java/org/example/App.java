@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.IOException;
 
-@WebServlet(name = "app", value = "/aston")
+@WebServlet(name = "App", value = "/aston")
 public class App extends HttpServlet {
     public String message = "Hello ";
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
