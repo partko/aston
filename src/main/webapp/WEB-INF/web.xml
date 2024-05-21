@@ -5,7 +5,7 @@
     <display-name>aston</display-name>
     <servlet>
         <servlet-name>app</servlet-name>
-        <servlet-class>App</servlet-class>
+        <servlet-class>org.example.App</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>app</servlet-name>
