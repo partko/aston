@@ -9,6 +9,6 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>app</servlet-name>
-        <url-pattern>/app</url-pattern>
+        <url-pattern>/aston</url-pattern>
     </servlet-mapping>
 </web-app>
