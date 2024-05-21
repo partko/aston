@@ -1,19 +1,22 @@
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.IOException;
 
+@WebServlet(name = "hello", value = "/hello")
 public class App extends HttpServlet {
-    public String getGreeting() {
-        return "Hello  ";
-    }
 
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // https://www.oracle.com/technetwork/java/servlet-142430.html
+        resp.setContentType("text/html");
         PrintWriter out = resp.getWriter();
-        out.println(this.getGreeting());
+        out.println("<html><body>");
+        out.println("<h1>");
+        out.println("HELLO ");
+        out.println("</h1>");
+        out.println("</body></html>");
         out.close();
     }
 }
