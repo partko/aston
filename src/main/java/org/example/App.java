@@ -8,10 +8,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.IOException;
 
-@WebServlet(name = "App", value = "/aston")
+@WebServlet(name = "App", value = "/servlet")
 public class App extends HttpServlet {
-    public String message = "Hello ";
-    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    public String message = "Hello ASTON";
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("text/html");
         PrintWriter out = resp.getWriter();
         out.println("<html><body>");
@@ -20,3 +20,5 @@ public class App extends HttpServlet {
         out.close();
     }
 }
+
+
