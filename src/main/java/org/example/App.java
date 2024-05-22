@@ -10,7 +10,7 @@ import java.io.IOException;
 
 @WebServlet(name = "App", value = "/servlet")
 public class App extends HttpServlet {
-    public String message = "Hello ";
+    public String message = "Hello ASTON";
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("text/html");
         PrintWriter out = resp.getWriter();
