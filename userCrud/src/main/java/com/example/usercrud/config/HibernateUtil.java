@@ -5,6 +5,9 @@ import org.hibernate.cfg.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Утилитный класс для создания и управления SessionFactory.
+ */
 public class HibernateUtil {
     private static final Logger logger = LoggerFactory.getLogger(HibernateUtil.class);
     public static final SessionFactory sessionFactory = buildSessionFactory();
@@ -12,6 +15,11 @@ public class HibernateUtil {
     private HibernateUtil () {
     }
 
+    /**
+     * Создаёт SessionFactory на основе файла конфигурации Hibernate.
+     *
+     * @return объект SessionFactory
+     */
     private static SessionFactory buildSessionFactory() {
         try {
             Configuration configuration = new Configuration();
@@ -24,18 +32,26 @@ public class HibernateUtil {
 
             return configuration.buildSessionFactory();
         } catch (Throwable e) {
-            logger.error("Error in initialization SessionFactory", e);
+            logger.error("Ошибка инициализации SessionFactory", e);
             throw new ExceptionInInitializerError(e);
         }
     }
 
+    /**
+     * Возвращает общий экземпляр SessionFactory.
+     *
+     * @return объект SessionFactory
+     */
     public static SessionFactory getSessionFactory() {
         return sessionFactory;
     }
 
+    /**
+     * Корректно завершает работу SessionFactory.
+     */
     public static void shutdown() {
         if (sessionFactory != null && !sessionFactory.isClosed()) {
-            logger.info("Closing the SessionFactory");
+            logger.info("Закрытие SessionFactory");
             sessionFactory.close();
         }
     }

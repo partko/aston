@@ -14,6 +14,9 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
+/**
+ * Утилитный класс для управления Liquibase.
+ */
 public final class LiquibaseUtil {
     private static final Logger logger = LoggerFactory.getLogger(LiquibaseUtil.class);
 
@@ -24,6 +27,9 @@ public final class LiquibaseUtil {
     private LiquibaseUtil() {
     }
 
+    /**
+     * Запускает миграцию БД.
+     */
     public static void runMigrations() {
         try (Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD)) {
             Database database = DatabaseFactory.getInstance()
@@ -36,10 +42,10 @@ public final class LiquibaseUtil {
             );
 
             liquibase.update(new Contexts(), new LabelExpression());
-            logger.info("Liquibase migrations have been successfully applied");
+            logger.info("Liquibase-миграция была успешно осуществлена");
         } catch (LiquibaseException | java.sql.SQLException e) {
-            logger.error("Error when performing Liquibase migrations", e);
-            throw new RuntimeException("Couldn't apply Liquibase migrations", e);
+            logger.error("Ошибка при выполнении Liquibase-миграции", e);
+            throw new RuntimeException("Невозможно выполнить Liquibase-миграцию", e);
         }
     }
 }

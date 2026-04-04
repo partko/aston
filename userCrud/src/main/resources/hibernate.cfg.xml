@@ -12,6 +12,6 @@
         <property name="hibernate.hbm2ddl.auto">validate</property>
         <property name="hibernate.current_session_context_class">thread</property>
 
-        <mapping class="com.example.usercrud.entity.User"/>
+        <mapping class="com.example.usercrud.entity.UserEntity"/>
     </session-factory>
 </hibernate-configuration>

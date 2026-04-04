@@ -15,6 +15,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Базовая Hibernate-реализация DAO с переиспользуемыми CRUD-операциями.
+ *
+ * @param <T> тип сущности
+ * @param <ID> тип идентификатора
+ */
 public abstract class BaseHibernateDao<T, ID extends Serializable> implements GenericDao<T, ID> {
     private static final Logger logger = LoggerFactory.getLogger(BaseHibernateDao.class);
 
@@ -26,7 +32,7 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
 
     @Override
     public T save(T entity) {
-        return executeInTransaction("save " + entityClass.getSimpleName(), session -> {
+        return executeInTransaction("Сохранение " + entityClass.getSimpleName(), session -> {
             session.persist(entity);
             return entity;
         });
@@ -36,12 +42,12 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
     public Optional<T> findById(ID id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             T entity = session.get(entityClass, id);
-            logger.info("{} fetched by id={}", entityClass.getSimpleName(), id);
+            logger.info("Сущность {} получена по id={}", entityClass.getSimpleName(), id);
             return Optional.ofNullable(entity);
         } catch (Exception e) {
-            logger.error("Error fetching {} by id={}", entityClass.getSimpleName(), id, e);
+            logger.error("Ошибка при получении сущности {} по id={}", entityClass.getSimpleName(), id, e);
             throw new DataAccessException(
-                    "Failed to fetch " + entityClass.getSimpleName() + " by id=" + id, e
+                    "Не удалось получить " + entityClass.getSimpleName() + " по id=" + id, e
             );
         }
     }
@@ -52,29 +58,29 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
             String hql = "from " + entityClass.getSimpleName() + " order by id";
             List<T> entities = session.createQuery(hql, entityClass).list();
 
-            logger.info("Fetched {} {} entities", entities.size(), entityClass.getSimpleName());
+            logger.info("Получено {} записей типа {}", entities.size(), entityClass.getSimpleName());
             return entities;
         } catch (Exception e) {
-            logger.error("Error fetching all {} entities", entityClass.getSimpleName(), e);
+            logger.error("Ошибка при получении списка сущностей {}", entityClass.getSimpleName(), e);
             throw new DataAccessException(
-                    "Failed to fetch " + entityClass.getSimpleName() + " list", e
+                    "Не удалось получить список " + entityClass.getSimpleName(), e
             );
         }
     }
 
     @Override
     public T update(T entity) {
-        return executeInTransaction("update " + entityClass.getSimpleName(), session ->
+        return executeInTransaction("обновление " + entityClass.getSimpleName(), session ->
                 (T) session.merge(entity)
         );
     }
 
     @Override
     public boolean deleteById(ID id) {
-        return executeInTransaction("delete " + entityClass.getSimpleName(), session -> {
+        return executeInTransaction("удаление " + entityClass.getSimpleName(), session -> {
             T entity = session.get(entityClass, id);
             if (entity == null) {
-                logger.warn("{} with id={} not found for deletion", entityClass.getSimpleName(), id);
+                logger.warn("Сущность {} с id={} не найдена для удаления", entityClass.getSimpleName(), id);
                 return false;
             }
 
@@ -83,6 +89,15 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
         });
     }
 
+    /**
+     * Выполняет Hibernate-операцию внутри транзакции.
+     * Берёт на себя commit, rollback и преобразование исключений.
+     *
+     * @param operationName имя операции для логирования
+     * @param action выполняемое действие
+     * @return результат операции
+     * @param <R> тип результата
+     */
     protected <R> R executeInTransaction(String operationName, Function<Session, R> action) {
         Transaction transaction = null;
 
@@ -92,14 +107,14 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
             R result = action.apply(session);
 
             transaction.commit();
-            logger.info("Operation '{}' completed successfully", operationName);
+            logger.info("Операция '{}' успешно завершена", operationName);
             return result;
 
         } catch (ConstraintViolationException e) {
             rollback(transaction);
 
             logger.warn(
-                    "Constraint violation during '{}': SQLState={}, constraint={}",
+                    "Нарушение ограничения при операции '{}': SQLState={}, constraint={}",
                     operationName,
                     e.getSQLState(),
                     e.getConstraintName()
@@ -107,37 +122,47 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
 
             if ("23505".equals(e.getSQLState())) {
                 throw new UniqueConstraintViolationException(
-                        "Unique constraint violated",
+                        "Нарушено ограничение на уникальность",
                         e.getConstraintName(),
                         e
                 );
             }
 
-            throw new DataAccessException("Data integrity error during operation: " + operationName, e);
+            throw new DataAccessException("Ошибка целостности данных при операции: " + operationName, e);
 
         } catch (HibernateException e) {
             rollback(transaction);
-            logger.error("Hibernate error during '{}'", operationName, e);
-            throw new DataAccessException("Database failure during operation: " + operationName, e);
+            logger.error("Ошибка Hibernate при операции '{}'", operationName, e);
+            throw new DataAccessException("Сбой базы данных при операции: " + operationName, e);
 
         } catch (Exception e) {
             rollback(transaction);
-            logger.error("Unexpected error during '{}'", operationName, e);
-            throw new DataAccessException("Failed to execute operation: " + operationName, e);
+            logger.error("Непредвиденная ошибка при операции '{}'", operationName, e);
+            throw new DataAccessException("Не удалось выполнить операцию: " + operationName, e);
         }
     }
 
+    /**
+     * Безопасно откатывает транзакцию.
+     *
+     * @param transaction транзакция
+     */
     private void rollback(Transaction transaction) {
         try {
             if (transaction != null && transaction.isActive()) {
                 transaction.rollback();
-                logger.info("Transaction rolled back successfully");
+                logger.info("Транзакция успешно откатилась");
             }
         } catch (Exception e) {
-            logger.error("Error during transaction rollback", e);
+            logger.error("Ошибка при откате транзакции", e);
         }
     }
 
+    /**
+     * Возвращает класс сущности.
+     *
+     * @return класс сущности
+     */
     protected Class<T> getEntityClass() {
         return entityClass;
     }

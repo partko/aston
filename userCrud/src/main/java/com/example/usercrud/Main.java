@@ -8,16 +8,16 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
-        logger.info("Starting user-service application");
+        logger.info("Запуск приложения");
 
         try {
             new ApplicationRunner().run();
-            logger.info("Application finished successfully");
+            logger.info("Приложение корректно завершило работу");
         } catch (Exception e) {
-            logger.error("Application startup or execution failed", e);
+            logger.error("Ошибка при запуске или выполнении приложения", e);
         } finally {
             HibernateUtil.shutdown();
-            logger.info("Application resources released");
+            logger.info("Ресурсы приложения освобождены");
         }
     }
 }

@@ -3,6 +3,9 @@ package com.example.usercrud.config;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Класс для получения данных из application.properties.
+ */
 public class AppConfig {
     private static final Properties properties = new Properties();
 
@@ -12,16 +15,22 @@ public class AppConfig {
                 .getResourceAsStream("application.properties")) {
 
             if (input == null) {
-                throw new RuntimeException("File application.properties is not found");
+                throw new RuntimeException("Файл application.properties не найден");
             }
 
             properties.load(input);
 
         } catch (Exception e) {
-            throw new RuntimeException("Error while loading application.properties", e);
+            throw new RuntimeException("Ошибка при чтении application.properties", e);
         }
     }
 
+    /**
+     * Возвращает property из application.properties по ключу.
+     *
+     * @param key ключ
+     * @return значение по ключу
+     */
     public static String get(String key) {
         return properties.getProperty(key);
     }

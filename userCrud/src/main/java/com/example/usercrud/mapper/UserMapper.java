@@ -3,42 +3,63 @@ package com.example.usercrud.mapper;
 import com.example.usercrud.dto.CreateUserRequest;
 import com.example.usercrud.dto.UpdateUserRequest;
 import com.example.usercrud.dto.UserResponse;
-import com.example.usercrud.entity.User;
+import com.example.usercrud.entity.UserEntity;
 
+/**
+ * Маппер для преобразования сущности пользователя и DTO.
+ */
 public final class UserMapper {
     private UserMapper() {
     }
 
-    public static User toEntity(CreateUserRequest request) {
+    /**
+     * Преобразует DTO создания пользователя в сущность.
+     *
+     * @param request DTO запроса на создание
+     * @return сущность пользователя
+     */
+    public static UserEntity toEntity(CreateUserRequest request) {
         if (request == null) {
             return null;
         }
-        return new User(
+        return new UserEntity(
                 request.getName(),
                 request.getEmail(),
                 request.getAge()
         );
     }
 
-    public static void updateEntity(User user, UpdateUserRequest request) {
-        if (user == null || request == null) {
+    /**
+     * Обновляет сущность пользователя значениями из DTO обновления.
+     *
+     * @param userEntity сущность пользователя
+     * @param request DTO обновления
+     */
+    public static void updateEntity(UserEntity userEntity, UpdateUserRequest request) {
+        if (userEntity == null || request == null) {
             return;
         }
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setAge(request.getAge());
+        userEntity.setName(request.getName());
+        userEntity.setEmail(request.getEmail());
+        userEntity.setAge(request.getAge());
     }
 
-    public static UserResponse toResponse(User user) {
-        if (user == null) {
+    /**
+     * Преобразует сущность пользователя в DTO ответа.
+     *
+     * @param userEntity сущность пользователя
+     * @return DTO ответа
+     */
+    public static UserResponse toResponse(UserEntity userEntity) {
+        if (userEntity == null) {
             return null;
         }
         return new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getAge(),
-                user.getCreatedAt()
+                userEntity.getId(),
+                userEntity.getName(),
+                userEntity.getEmail(),
+                userEntity.getAge(),
+                userEntity.getCreatedAt()
         );
     }
 }

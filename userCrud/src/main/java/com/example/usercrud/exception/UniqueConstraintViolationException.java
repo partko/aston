@@ -1,5 +1,8 @@
 package com.example.usercrud.exception;
 
+/**
+ * Исключение, возникающее при нарушении уникального ограничения в базе данных.
+ */
 public class UniqueConstraintViolationException extends RuntimeException {
     private final String constraintName;
 
@@ -8,6 +11,11 @@ public class UniqueConstraintViolationException extends RuntimeException {
         this.constraintName = constraintName;
     }
 
+    /**
+     * Возвращает имя ограничения базы данных, которое было нарушено.
+     *
+     * @return имя ограничения
+     */
     public String getConstraintName() {
         return constraintName;
     }

@@ -1,22 +1,48 @@
-package com.example.usercrud.dto;
+package com.example.usercrud.entity;
+
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 
 /**
- * DTO для обновления существующего пользователя.
+ * JPA-сущность пользователя, отображаемая на таблицу users.
  */
-public class UpdateUserRequest {
+@Entity
+@Table(name = "users")
+public class UserEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
+
+    @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
+
+    @Column(name = "age", nullable = false)
     private Integer age;
 
-    public UpdateUserRequest() {
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    public UserEntity() {
     }
 
-    public UpdateUserRequest(Long id, String name, String email, Integer age) {
-        this.id = id;
+    public UserEntity(String name, String email, Integer age) {
         this.name = name;
         this.email = email;
         this.age = age;
+    }
+
+    /**
+     * Устанавливает дату создания перед сохранением сущности в базу данных.
+     */
+    @PrePersist
+    public void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
     }
 
     /**
@@ -89,5 +115,33 @@ public class UpdateUserRequest {
      */
     public void setAge(Integer age) {
         this.age = age;
+    }
+
+    /**
+     * Возвращает дату создания пользователя.
+     *
+     * @return дата создания
+     */
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    /**
+     * Устанавливает дату создания пользователя.
+     *
+     * @param createdAt дата создания
+     */
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    @Override
+    public String toString() {
+        return "UserEntity { "+ id
+                + " | " + name
+                + " | " + email
+                + " | " + age
+                + " | " + createdAt
+                + " }";
     }
 }

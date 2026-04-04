@@ -3,6 +3,12 @@ package com.example.usercrud.dao;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Обобщённый DAO-контракт для базовых CRUD-операций.
+ *
+ * @param <T> тип сущности
+ * @param <ID> тип идентификатора
+ */
 public interface GenericDao<T, ID> {
     T save(T entity);
     Optional<T> findById(ID id);
