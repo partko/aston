@@ -18,7 +18,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Интеграционные тесты DAO слоя с использованием Testcontainers.
@@ -26,15 +30,14 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class UserDaoImplIntegrationTest {
+    private static SessionFactory sessionFactory;
+    private static UserDaoImpl userDao;
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17")
             .withDatabaseName("test_db")
             .withUsername("test")
             .withPassword("test");
-
-    private static SessionFactory sessionFactory;
-    private static UserDaoImpl userDao;
 
     @BeforeAll
     static void beforeAll() {
@@ -71,9 +74,7 @@ class UserDaoImplIntegrationTest {
 
     @Test
     void findById_shouldReturnEmptyOptionalWhenUserDoesNotExist() {
-        Optional<UserEntity> found = userDao.findById(10000L);
-
-        assertTrue(found.isEmpty());
+        assertTrue(userDao.findById(10000L).isEmpty());
     }
 
     @Test
@@ -91,7 +92,6 @@ class UserDaoImplIntegrationTest {
     @Test
     void update_shouldModifyExistingUser() {
         UserEntity user = userDao.save(new UserEntity("Vladimir", "vvv@gmail.com", 25));
-
         user.setName("Vladimir Updated");
         user.setEmail("updated@gmail.com");
         user.setAge(35);
@@ -101,7 +101,6 @@ class UserDaoImplIntegrationTest {
         assertEquals("Vladimir Updated", updated.getName());
         assertEquals("updated@gmail.com", updated.getEmail());
         assertEquals(35, updated.getAge());
-
         Optional<UserEntity> found = userDao.findById(updated.getId());
         assertTrue(found.isPresent());
         assertEquals("Vladimir Updated", found.get().getName());

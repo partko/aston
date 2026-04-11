@@ -19,8 +19,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * Юнит-тесты для UserServiceImpl.
@@ -50,7 +59,6 @@ class UserServiceImplTest {
         assertEquals("Vladimir", response.getName());
         assertEquals("vvv@gmail.com", response.getEmail());
         assertEquals(25, response.getAge());
-
         verify(userDao).findByEmail("vvv@gmail.com");
         verify(userDao).save(any(UserEntity.class));
         verifyNoMoreInteractions(userDao);
@@ -59,10 +67,8 @@ class UserServiceImplTest {
     @Test
     void createUser_shouldThrowExceptionWhenEmailAlreadyExists() {
         CreateUserRequest request = new CreateUserRequest("Vladimir", "vvv@gmail.com", 25);
-
         UserEntity existingUser = new UserEntity("Existing", "vvv@gmail.com", 30);
         existingUser.setId(1000L);
-
         when(userDao.findByEmail("vvv@gmail.com")).thenReturn(Optional.of(existingUser));
 
         IllegalArgumentException exception = assertThrows(
@@ -170,11 +176,9 @@ class UserServiceImplTest {
         UserEntity first = new UserEntity("Vladimir", "vvv@gmail.com", 25);
         first.setId(1L);
         first.setCreatedAt(LocalDateTime.now());
-
         UserEntity second = new UserEntity("Alice", "aaa@gmail.com", 22);
         second.setId(2L);
         second.setCreatedAt(LocalDateTime.now());
-
         when(userDao.findAll()).thenReturn(List.of(first, second));
 
         List<UserResponse> response = userService.getAllUsers();
@@ -190,15 +194,12 @@ class UserServiceImplTest {
     @Test
     void updateUser_shouldUpdateUserSuccessfully() {
         UpdateUserRequest request = new UpdateUserRequest(1L, "Updated", "updated@gmail.com", 35);
-
         UserEntity existing = new UserEntity("Vladimir", "vvv@gmail.com", 25);
         existing.setId(1L);
         existing.setCreatedAt(LocalDateTime.now());
-
         UserEntity updated = new UserEntity("Updated", "updated@gmail.com", 35);
         updated.setId(1L);
         updated.setCreatedAt(existing.getCreatedAt());
-
         when(userDao.findById(1L)).thenReturn(Optional.of(existing));
         when(userDao.update(any(UserEntity.class))).thenReturn(updated);
 
@@ -209,7 +210,6 @@ class UserServiceImplTest {
         assertEquals("Updated", response.getName());
         assertEquals("updated@gmail.com", response.getEmail());
         assertEquals(35, response.getAge());
-
         verify(userDao).findById(1L);
         verify(userDao).update(argThat(entity ->
                 entity.getId().equals(1L) &&
