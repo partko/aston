@@ -10,9 +10,12 @@ import org.slf4j.LoggerFactory;
  */
 public class HibernateUtil {
     private static final Logger logger = LoggerFactory.getLogger(HibernateUtil.class);
+    private static final String CONFIG_FILE =
+            System.getProperty("hibernate.config.file", "hibernate.cfg.xml");
+
     public static final SessionFactory sessionFactory = buildSessionFactory();
 
-    private HibernateUtil () {
+    private HibernateUtil() {
     }
 
     /**
@@ -22,10 +25,11 @@ public class HibernateUtil {
      */
     private static SessionFactory buildSessionFactory() {
         try {
+            logger.info("Загрузка Hibernate-конфигурации из файла: {}", CONFIG_FILE);
             Configuration configuration = new Configuration();
+            configuration.configure(CONFIG_FILE);
 
-            configuration.configure("hibernate.cfg.xml");
-
+            logger.info("Применение настроек из AppConfig");
             configuration.setProperty("hibernate.connection.url", AppConfig.get("db.url"));
             configuration.setProperty("hibernate.connection.username", AppConfig.get("db.user"));
             configuration.setProperty("hibernate.connection.password", AppConfig.get("db.password"));

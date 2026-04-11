@@ -5,6 +5,7 @@ import com.example.usercrud.exception.DataAccessException;
 import com.example.usercrud.exception.UniqueConstraintViolationException;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -25,9 +26,26 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
     private static final Logger logger = LoggerFactory.getLogger(BaseHibernateDao.class);
 
     private final Class<T> entityClass;
+    private final SessionFactory sessionFactory;
 
+    /**
+     * Создаёт DAO с использованием стандартной SessionFactory.
+     *
+     * @param entityClass класс сущности
+     */
     protected BaseHibernateDao(Class<T> entityClass) {
+        this(entityClass, HibernateUtil.getSessionFactory());
+    }
+
+    /**
+     * Создаёт DAO с переданным SessionFactory.
+     *
+     * @param entityClass класс сущности
+     * @param sessionFactory SessionFactory
+     */
+    protected BaseHibernateDao(Class<T> entityClass, SessionFactory sessionFactory) {
         this.entityClass = entityClass;
+        this.sessionFactory = sessionFactory;
     }
 
     @Override
@@ -40,7 +58,7 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
 
     @Override
     public Optional<T> findById(ID id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sessionFactory.openSession()) {
             T entity = session.get(entityClass, id);
             logger.info("Сущность {} получена по id={}", entityClass.getSimpleName(), id);
             return Optional.ofNullable(entity);
@@ -54,7 +72,7 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
 
     @Override
     public List<T> findAll() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sessionFactory.openSession()) {
             String hql = "from " + entityClass.getSimpleName() + " order by id";
             List<T> entities = session.createQuery(hql, entityClass).list();
 
@@ -101,7 +119,7 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
     protected <R> R executeInTransaction(String operationName, Function<Session, R> action) {
         Transaction transaction = null;
 
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sessionFactory.openSession()) {
             transaction = session.beginTransaction();
 
             R result = action.apply(session);
@@ -156,6 +174,15 @@ public abstract class BaseHibernateDao<T, ID extends Serializable> implements Ge
         } catch (Exception e) {
             logger.error("Ошибка при откате транзакции", e);
         }
+    }
+
+    /**
+     * Возвращает используемый SessionFactory.
+     *
+     * @return SessionFactory
+     */
+    protected SessionFactory getSessionFactory() {
+        return sessionFactory;
     }
 
     /**
