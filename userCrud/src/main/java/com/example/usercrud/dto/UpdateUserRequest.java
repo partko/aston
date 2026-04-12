@@ -1,40 +1,35 @@
 package com.example.usercrud.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 /**
  * DTO для обновления существующего пользователя.
  */
 public class UpdateUserRequest {
-    private Long id;
+
+    @NotBlank(message = "Имя не может быть пустым")
     private String name;
+
+    @NotBlank(message = "Email не может быть пустым")
+    @Email(message = "Неправильный формат email")
     private String email;
+
+    @NotNull(message = "Возраст не может быть пустым")
+    @Min(value = 0, message = "Возраст должен быть в пределах от 0 до 150")
+    @Max(value = 150, message = "Возраст должен быть в пределах от 0 до 150")
     private Integer age;
 
     public UpdateUserRequest() {
     }
 
-    public UpdateUserRequest(Long id, String name, String email, Integer age) {
-        this.id = id;
+    public UpdateUserRequest(String name, String email, Integer age) {
         this.name = name;
         this.email = email;
         this.age = age;
-    }
-
-    /**
-     * Возвращает идентификатор пользователя.
-     *
-     * @return идентификатор пользователя
-     */
-    public Long getId() {
-        return id;
-    }
-
-    /**
-     * Устанавливает идентификатор пользователя.
-     *
-     * @param id идентификатор пользователя
-     */
-    public void setId(Long id) {
-        this.id = id;
     }
 
     /**

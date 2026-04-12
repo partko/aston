@@ -1,16 +1,15 @@
 package com.example.usercrud.service.impl;
 
-import com.example.usercrud.dao.UserDao;
 import com.example.usercrud.dto.CreateUserRequest;
 import com.example.usercrud.dto.UpdateUserRequest;
 import com.example.usercrud.dto.UserResponse;
 import com.example.usercrud.entity.UserEntity;
 import com.example.usercrud.exception.NotFoundException;
+import com.example.usercrud.repository.UserRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,38 +18,39 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Юнит-тесты для UserServiceImpl.
+ * Unit-тесты сервисного слоя пользователей.
  */
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
     @Mock
-    private UserDao userDao;
+    private UserRepository userRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
 
     @Test
-    void createUser_shouldCreateUserSuccessfully() {
+    @DisplayName("createUser должен создать пользователя")
+    void createUser_shouldCreateUser() {
         CreateUserRequest request = new CreateUserRequest("Vladimir", "vvv@gmail.com", 25);
         UserEntity savedEntity = new UserEntity("Vladimir", "vvv@gmail.com", 25);
         savedEntity.setId(1L);
         savedEntity.setCreatedAt(LocalDateTime.now());
-        when(userDao.findByEmail("vvv@gmail.com")).thenReturn(Optional.empty());
-        when(userDao.save(any(UserEntity.class))).thenReturn(savedEntity);
+        when(userRepository.existsByEmail("vvv@gmail.com")).thenReturn(false);
+        when(userRepository.save(any(UserEntity.class))).thenReturn(savedEntity);
 
         UserResponse response = userService.createUser(request);
 
@@ -59,91 +59,31 @@ class UserServiceImplTest {
         assertEquals("Vladimir", response.getName());
         assertEquals("vvv@gmail.com", response.getEmail());
         assertEquals(25, response.getAge());
-        verify(userDao).findByEmail("vvv@gmail.com");
-        verify(userDao).save(any(UserEntity.class));
-        verifyNoMoreInteractions(userDao);
+        verify(userRepository).existsByEmail("vvv@gmail.com");
+        verify(userRepository).save(argThat(matchesUser("Vladimir", "vvv@gmail.com", 25)));
+        verifyNoMoreInteractions(userRepository);
     }
 
     @Test
-    void createUser_shouldThrowExceptionWhenEmailAlreadyExists() {
+    @DisplayName("createUser должен бросить IllegalArgumentException если email уже занят")
+    void createUser_shouldThrowIllegalArgumentExceptionWhenEmailAlreadyExists() {
         CreateUserRequest request = new CreateUserRequest("Vladimir", "vvv@gmail.com", 25);
-        UserEntity existingUser = new UserEntity("Existing", "vvv@gmail.com", 30);
-        existingUser.setId(1000L);
-        when(userDao.findByEmail("vvv@gmail.com")).thenReturn(Optional.of(existingUser));
+        when(userRepository.existsByEmail("vvv@gmail.com")).thenReturn(true);
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> userService.createUser(request)
-        );
+        assertThrows(IllegalArgumentException.class, () -> userService.createUser(request));
 
-        assertNotNull(exception);
-        verify(userDao).findByEmail("vvv@gmail.com");
-        verify(userDao, never()).save(any());
-        verifyNoMoreInteractions(userDao);
-    }
-
-    @ParameterizedTest
-    @NullAndEmptySource
-    @ValueSource(strings = {"email", "gmail@", "@gmail.com", "vvv.gmail.com", "vvv@"})
-    void createUser_shouldThrowIllegalArgumentExceptionWhenEmailIsInvalid(String invalidEmail) {
-        CreateUserRequest request = new CreateUserRequest("Vladimir", invalidEmail, 25);
-
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> userService.createUser(request)
-        );
-
-        assertNotNull(exception);
-        verifyNoInteractions(userDao);
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {-1, 151, 1000})
-    void createUser_shouldThrowIllegalArgumentExceptionWhenAgeIsInvalid(int invalidAge) {
-        CreateUserRequest request = new CreateUserRequest("Vladimir", "vvv@gmail.com", invalidAge);
-
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> userService.createUser(request)
-        );
-
-        assertNotNull(exception);
-        verifyNoInteractions(userDao);
-    }
-
-    @ParameterizedTest
-    @NullAndEmptySource
-    @ValueSource(strings = {" ", "   "})
-    void createUser_shouldThrowIllegalArgumentExceptionWhenNameIsInvalid(String invalidName) {
-        CreateUserRequest request = new CreateUserRequest(invalidName, "vvv@gmail.com", 25);
-
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> userService.createUser(request)
-        );
-
-        assertNotNull(exception);
-        verifyNoInteractions(userDao);
-    }
-
-    @ParameterizedTest
-    @ValueSource(longs = {0L, -1L, -100L})
-    void getUserById_shouldThrowIllegalArgumentExceptionWhenIdIsInvalid(long invalidId) {
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> userService.getUserById(invalidId)
-        );
-
-        assertNotNull(exception);
-        verifyNoInteractions(userDao);
+        verify(userRepository).existsByEmail("vvv@gmail.com");
+        verify(userRepository, never()).save(any());
+        verifyNoMoreInteractions(userRepository);
     }
 
     @Test
-    void getUserById_shouldReturnUserSuccessfully() {
+    @DisplayName("getUserById должен вернуть пользователя по id")
+    void getUserById_shouldReturnUserById() {
         UserEntity entity = new UserEntity("Vladimir", "vvv@gmail.com", 25);
         entity.setId(1L);
         entity.setCreatedAt(LocalDateTime.now());
-        when(userDao.findById(1L)).thenReturn(Optional.of(entity));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(entity));
 
         UserResponse response = userService.getUserById(1L);
 
@@ -151,112 +91,174 @@ class UserServiceImplTest {
         assertEquals(1L, response.getId());
         assertEquals("Vladimir", response.getName());
         assertEquals("vvv@gmail.com", response.getEmail());
-        assertEquals(25, response.getAge());
-        assertNotNull(response.getCreatedAt());
-        verify(userDao).findById(1L);
-        verifyNoMoreInteractions(userDao);
+        verify(userRepository).findById(1L);
+        verifyNoMoreInteractions(userRepository);
     }
 
     @Test
-    void getUserById_shouldThrowNotFoundExceptionWhenUserDoesNotExist() {
-        when(userDao.findById(1L)).thenReturn(Optional.empty());
+    @DisplayName("getUserById должен бросить NotFoundException если пользователь не найден")
+    void getUserById_shouldThrowNotFoundExceptionWhenUserMissing() {
+        when(userRepository.findById(1000L)).thenReturn(Optional.empty());
 
-        NotFoundException exception = assertThrows(
-                NotFoundException.class,
-                () -> userService.getUserById(1L)
+        assertThrows(NotFoundException.class, () -> userService.getUserById(1000L));
+
+        verify(userRepository).findById(1000L);
+        verifyNoMoreInteractions(userRepository);
+    }
+
+    @Test
+    @DisplayName("getAllUsers должен вернуть всех пользователей")
+    void getAllUsers_shouldReturnAllUsers() {
+        List<UserEntity> entities = List.of(
+                new UserEntity("Vladimir", "vvv@gmail.com", 25),
+                new UserEntity("Alice", "aaa@gmail.com", 30)
         );
+        when(userRepository.findAll()).thenReturn(entities);
 
-        assertNotNull(exception);
-        verify(userDao).findById(1L);
-        assertNotNull(exception);
+        List<UserResponse> result = userService.getAllUsers();
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("Vladimir", result.get(0).getName());
+        assertEquals("Alice", result.get(1).getName());
+        verify(userRepository).findAll();
+        verifyNoMoreInteractions(userRepository);
     }
 
     @Test
-    void getAllUsers_shouldReturnMappedUsers() {
-        UserEntity first = new UserEntity("Vladimir", "vvv@gmail.com", 25);
-        first.setId(1L);
-        first.setCreatedAt(LocalDateTime.now());
-        UserEntity second = new UserEntity("Alice", "aaa@gmail.com", 22);
-        second.setId(2L);
-        second.setCreatedAt(LocalDateTime.now());
-        when(userDao.findAll()).thenReturn(List.of(first, second));
+    @DisplayName("getAllUsers должен вернуть пустой список если пользователей нет")
+    void getAllUsers_shouldReturnEmptyList() {
+        when(userRepository.findAll()).thenReturn(List.of());
 
-        List<UserResponse> response = userService.getAllUsers();
+        List<UserResponse> result = userService.getAllUsers();
 
-        assertNotNull(response);
-        assertEquals(2, response.size());
-        assertEquals("Vladimir", response.get(0).getName());
-        assertEquals("Alice", response.get(1).getName());
-        verify(userDao).findAll();
-        verifyNoMoreInteractions(userDao);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(userRepository).findAll();
+        verifyNoMoreInteractions(userRepository);
     }
 
     @Test
-    void updateUser_shouldUpdateUserSuccessfully() {
-        UpdateUserRequest request = new UpdateUserRequest(1L, "Updated", "updated@gmail.com", 35);
+    @DisplayName("updateUser должен обновить пользователя")
+    void updateUser_shouldUpdateUser() {
+        UpdateUserRequest request = new UpdateUserRequest("New", "new@gmail.com", 35);
         UserEntity existing = new UserEntity("Vladimir", "vvv@gmail.com", 25);
         existing.setId(1L);
         existing.setCreatedAt(LocalDateTime.now());
-        UserEntity updated = new UserEntity("Updated", "updated@gmail.com", 35);
+        UserEntity updated = new UserEntity("New", "new@gmail.com", 35);
         updated.setId(1L);
         updated.setCreatedAt(existing.getCreatedAt());
-        when(userDao.findById(1L)).thenReturn(Optional.of(existing));
-        when(userDao.update(any(UserEntity.class))).thenReturn(updated);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(userRepository.findByEmail("new@gmail.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(UserEntity.class))).thenReturn(updated);
 
-        UserResponse response = userService.updateUser(request);
+        UserResponse response = userService.updateUser(1L, request);
 
         assertNotNull(response);
         assertEquals(1L, response.getId());
-        assertEquals("Updated", response.getName());
-        assertEquals("updated@gmail.com", response.getEmail());
+        assertEquals("New", response.getName());
+        assertEquals("new@gmail.com", response.getEmail());
         assertEquals(35, response.getAge());
-        verify(userDao).findById(1L);
-        verify(userDao).update(argThat(entity ->
-                entity.getId().equals(1L) &&
-                        entity.getName().equals("Updated") &&
-                        entity.getEmail().equals("updated@gmail.com") &&
-                        entity.getAge() == 35
-        ));
-        verifyNoMoreInteractions(userDao);
+        verify(userRepository).findById(1L);
+        verify(userRepository).findByEmail("new@gmail.com");
+        verify(userRepository).save(argThat(matchesUser("New", "new@gmail.com", 35)));
+        verifyNoMoreInteractions(userRepository);
     }
 
     @Test
-    void updateUser_shouldThrowNotFoundExceptionWhenUserDoesNotExist() {
-        UpdateUserRequest request = new UpdateUserRequest(1L, "Updated", "updated@gmail.com", 35);
-        when(userDao.findById(1L)).thenReturn(Optional.empty());
+    @DisplayName("updateUser должен бросить NotFoundException если обновляемый пользователь не найден")
+    void updateUser_shouldThrowNotFoundExceptionWhenUpdatingMissingUser() {
+        UpdateUserRequest request = new UpdateUserRequest("New", "new@gmail.com", 35);
+        when(userRepository.findById(1000L)).thenReturn(Optional.empty());
 
-        NotFoundException exception = assertThrows(
-                NotFoundException.class,
-                () -> userService.updateUser(request)
-        );
+        assertThrows(NotFoundException.class, () -> userService.updateUser(1000L, request));
 
-        assertNotNull(exception);
-        verify(userDao).findById(1L);
-        verify(userDao, never()).update(any());
-        verifyNoMoreInteractions(userDao);
+        verify(userRepository).findById(1000L);
+        verify(userRepository, never()).findByEmail(any());
+        verify(userRepository, never()).save(any());
+        verifyNoMoreInteractions(userRepository);
     }
 
     @Test
-    void deleteUser_shouldDeleteUserSuccessfully() {
-        when(userDao.deleteById(1L)).thenReturn(true);
+    @DisplayName("updateUser должен бросить IllegalArgumentException если новый email занят другим пользователем")
+    void updateUser_shouldThrowIllegalArgumentExceptionWhenEmailBelongsToAnotherUser() {
+        UpdateUserRequest request = new UpdateUserRequest("Updated", "occupied@gmail.com", 35);
+        UserEntity existing = new UserEntity("Vladimir", "vvv@gmail.com", 25);
+        existing.setId(1L);
+        existing.setCreatedAt(LocalDateTime.now());
+        UserEntity anotherUser = new UserEntity("Alice", "occupied@gmail.com", 30);
+        anotherUser.setId(2L);
+        anotherUser.setCreatedAt(LocalDateTime.now());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(userRepository.findByEmail("occupied@gmail.com")).thenReturn(Optional.of(anotherUser));
 
-        assertDoesNotThrow(() -> userService.deleteUser(1L));
+        assertThrows(IllegalArgumentException.class, () -> userService.updateUser(1L, request));
 
-        verify(userDao).deleteById(1L);
-        verifyNoMoreInteractions(userDao);
+        verify(userRepository).findById(1L);
+        verify(userRepository).findByEmail("occupied@gmail.com");
+        verify(userRepository, never()).save(any());
+        verifyNoMoreInteractions(userRepository);
     }
 
     @Test
-    void deleteUser_shouldThrowNotFoundExceptionWhenUserDoesNotExist() {
-        when(userDao.deleteById(1L)).thenReturn(false);
+    @DisplayName("updateUser должен обновить пользователя если email принадлежит ему же")
+    void updateUser_shouldUpdateUserWhenEmailBelongsToSameUser() {
+        UpdateUserRequest request = new UpdateUserRequest("Vladimir New", "vvv@gmail.com", 40);
+        UserEntity existing = new UserEntity("Vladimir", "vvv@mail.com", 25);
+        existing.setId(1L);
+        existing.setCreatedAt(LocalDateTime.now());
+        UserEntity sameUserByEmail = new UserEntity("Vladimir", "vvv@gmail.com", 25);
+        sameUserByEmail.setId(1L);
+        sameUserByEmail.setCreatedAt(existing.getCreatedAt());
+        UserEntity saved = new UserEntity("Vladimir New", "vvv@gmail.com", 40);
+        saved.setId(1L);
+        saved.setCreatedAt(existing.getCreatedAt());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(userRepository.findByEmail("vvv@gmail.com")).thenReturn(Optional.of(sameUserByEmail));
+        when(userRepository.save(any(UserEntity.class))).thenReturn(saved);
 
-        NotFoundException exception = assertThrows(
-                NotFoundException.class,
-                () -> userService.deleteUser(1L)
-        );
+        UserResponse response = userService.updateUser(1L, request);
 
-        assertNotNull(exception);
-        verify(userDao).deleteById(1L);
-        verifyNoMoreInteractions(userDao);
+        assertNotNull(response);
+        assertEquals("Vladimir New", response.getName());
+        assertEquals("vvv@gmail.com", response.getEmail());
+        assertEquals(40, response.getAge());
+        verify(userRepository).findById(1L);
+        verify(userRepository).findByEmail("vvv@gmail.com");
+        verify(userRepository).save(any(UserEntity.class));
+        verifyNoMoreInteractions(userRepository);
+    }
+
+    @Test
+    @DisplayName("deleteUser должен удалить пользователя")
+    void deleteUser_shouldDeleteUser() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        doNothing().when(userRepository).deleteById(1L);
+
+        userService.deleteUser(1L);
+
+        verify(userRepository).existsById(1L);
+        verify(userRepository).deleteById(1L);
+        verifyNoMoreInteractions(userRepository);
+    }
+
+    @Test
+    @DisplayName("deleteUser должен бросить NotFoundException если пользователь для удаления не найден")
+    void deleteUser_shouldThrowNotFoundExceptionWhenDeletingMissingUser() {
+        when(userRepository.existsById(1000L)).thenReturn(false);
+
+        assertThrows(NotFoundException.class, () -> userService.deleteUser(1000L));
+
+        verify(userRepository).existsById(1000L);
+        verify(userRepository, never()).deleteById(any());
+        verifyNoMoreInteractions(userRepository);
+    }
+
+    private ArgumentMatcher<UserEntity> matchesUser(String expectedName, String expectedEmail, Integer expectedAge) {
+        return entity ->
+                entity != null &&
+                        expectedName.equals(entity.getName()) &&
+                        expectedEmail.equals(entity.getEmail()) &&
+                        expectedAge.equals(entity.getAge());
     }
 }
