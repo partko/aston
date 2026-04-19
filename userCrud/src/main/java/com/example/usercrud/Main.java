@@ -1,9 +1,11 @@
 package com.example.usercrud;
 
-import com.example.usercrud.config.HibernateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+@SpringBootApplication
 public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
@@ -11,13 +13,11 @@ public class Main {
         logger.info("Запуск приложения");
 
         try {
-            new ApplicationRunner().run();
-            logger.info("Приложение корректно завершило работу");
+            SpringApplication.run(Main.class, args);
+            logger.info("Приложение успешно запущено");
         } catch (Exception e) {
             logger.error("Ошибка при запуске или выполнении приложения", e);
-        } finally {
-            HibernateUtil.shutdown();
-            logger.info("Ресурсы приложения освобождены");
+            throw e;
         }
     }
 }

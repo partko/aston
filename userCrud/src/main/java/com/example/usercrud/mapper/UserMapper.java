@@ -9,6 +9,7 @@ import com.example.usercrud.entity.UserEntity;
  * Маппер для преобразования сущности пользователя и DTO.
  */
 public final class UserMapper {
+    
     private UserMapper() {
     }
 

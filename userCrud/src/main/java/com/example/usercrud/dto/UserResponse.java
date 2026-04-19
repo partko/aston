@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
  * DTO для возврата данных пользователя во внешний слой.
  */
 public class UserResponse {
+
     private Long id;
     private String name;
     private String email;
